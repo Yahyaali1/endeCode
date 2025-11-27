@@ -1,0 +1,190 @@
+/* Base64 Decoder Popup Styles */
+#base64-decoder-popup {
+  position: absolute;
+  z-index: 10000;
+  max-width: 500px;
+  min-width: 300px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  animation: slideDown 0.2s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.base64-decoder-popup.success {
+  background: #ffffff;
+  border: 2px solid #28a745;
+}
+
+.base64-decoder-popup.error {
+  background: #ffffff;
+  border: 2px solid #dc3545;
+}
+
+.base64-decoder-content {
+  padding: 16px;
+  position: relative;
+}
+
+.base64-decoder-header {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.base64-decoder-popup.success .base64-decoder-header {
+  color: #28a745;
+}
+
+.base64-decoder-popup.error .base64-decoder-header {
+  color: #dc3545;
+}
+
+.base64-decoder-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #212529;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.base64-decoder-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6c757d;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.base64-decoder-close:hover {
+  background: #f0f0f0;
+  color: #212529;
+}
+
+.base64-decoder-copy {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.base64-decoder-copy:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.base64-decoder-copy:active {
+  transform: translateY(0);
+}
+
+/* Scrollbar styling */
+.base64-decoder-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.base64-decoder-body::-webkit-scrollbar-track {
+  background: #e9ecef;
+  border-radius: 3px;
+}
+
+.base64-decoder-body::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 3px;
+}
+
+.base64-decoder-body::-webkit-scrollbar-thumb:hover {
+  background: #6c757d;
+}
+
+/* JSON formatted styling */
+.base64-decoder-body.json-formatted {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  line-height: 1.6;
+}
+
+.json-formatted {
+  color: #d4d4d4;
+}
+
+/* JSON syntax highlighting (basic) */
+.json-formatted {
+  color: #d4d4d4;
+}
+
+/* Note: For full syntax highlighting, you'd need a library, but basic formatting is done */
+
+/* Floating decode button */
+#base64-decoder-floating-btn {
+  position: absolute;
+  z-index: 10001;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  user-select: none;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.2s ease-out;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+#base64-decoder-floating-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#base64-decoder-floating-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+#base64-decoder-floating-btn:active {
+  transform: translateY(0);
+}
+
