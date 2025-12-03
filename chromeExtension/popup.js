@@ -136,6 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check for pending decode text from context menu
   chrome.runtime.sendMessage({ action: 'getPendingDecode' }, (response) => {
+    if (chrome.runtime.lastError) {
+      // Ignore errors - this is expected if background script isn't ready
+      return;
+    }
     if (response && response.text) {
       base64Input.value = response.text;
       const result = decodeBase64(response.text);
@@ -145,4 +149,152 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Focus input on load
   base64Input.focus();
+
+  // Settings functionality
+  const toggleSettings = document.getElementById('toggleSettings');
+  const settingsContent = document.getElementById('settingsContent');
+  const websiteInput = document.getElementById('websiteInput');
+  const addWebsiteBtn = document.getElementById('addWebsiteBtn');
+  const addCurrentWebsiteBtn = document.getElementById('addCurrentWebsiteBtn');
+  const websiteList = document.getElementById('websiteList');
+
+  // Check if settings elements exist
+  if (!toggleSettings || !settingsContent) {
+    console.error('Settings elements not found');
+    return;
+  }
+
+  let settingsVisible = false;
+  let allowedWebsites = [];
+  let currentWebsite = '';
+
+  // Load settings from storage
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['allowedWebsites'], (result) => {
+      if (result.allowedWebsites && Array.isArray(result.allowedWebsites)) {
+        allowedWebsites = result.allowedWebsites;
+        renderWebsiteList();
+      }
+    });
+  }
+
+  // Get current website
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0] && tabs[0].url) {
+      try {
+        const url = new URL(tabs[0].url);
+        currentWebsite = url.hostname.replace(/^www\./, '').toLowerCase();
+        if (websiteInput) {
+          websiteInput.placeholder = `e.g., ${currentWebsite} or *.${currentWebsite.split('.').slice(-2).join('.')}`;
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+  });
+
+  // Add current website button
+  if (addCurrentWebsiteBtn) {
+    addCurrentWebsiteBtn.addEventListener('click', () => {
+      if (currentWebsite) {
+        websiteInput.value = currentWebsite;
+        addWebsiteBtn.click();
+      } else {
+        showStatus('Could not detect current website', 'error');
+      }
+    });
+  }
+
+  // Toggle settings visibility
+  toggleSettings.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    settingsVisible = !settingsVisible;
+    if (settingsVisible) {
+      settingsContent.classList.add('show');
+      settingsContent.style.display = 'block';
+      toggleSettings.textContent = 'Hide';
+    } else {
+      settingsContent.classList.remove('show');
+      settingsContent.style.display = 'none';
+      toggleSettings.textContent = 'Show';
+    }
+  });
+
+  // Add website
+  addWebsiteBtn.addEventListener('click', () => {
+    const website = websiteInput.value.trim();
+    if (website) {
+      // Normalize website (remove protocol, trailing slashes)
+      const normalized = website
+        .replace(/^https?:\/\//, '')
+        .replace(/\/$/, '')
+        .toLowerCase();
+      
+      if (normalized && !allowedWebsites.includes(normalized)) {
+        allowedWebsites.push(normalized);
+        saveWebsites();
+        websiteInput.value = '';
+        renderWebsiteList();
+        showStatus('Website added!', 'success');
+      } else if (allowedWebsites.includes(normalized)) {
+        showStatus('Website already in list', 'error');
+      }
+    }
+  });
+
+  // Add website on Enter key
+  websiteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addWebsiteBtn.click();
+    }
+  });
+
+  // Remove website
+  function removeWebsite(website) {
+    allowedWebsites = allowedWebsites.filter(w => w !== website);
+    saveWebsites();
+    renderWebsiteList();
+    showStatus('Website removed!', 'success');
+  }
+
+  // Save websites to storage
+  function saveWebsites() {
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ allowedWebsites: allowedWebsites }, () => {
+        // Notify content scripts of the change
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach(tab => {
+            if (tab && tab.id && tab.id >= 0) {
+              chrome.tabs.sendMessage(tab.id, { action: 'updateAllowedWebsites', websites: allowedWebsites }).catch(() => {
+                // Ignore errors for tabs where content script isn't loaded
+              });
+            }
+          });
+        });
+      });
+    }
+  }
+
+  // Render website list
+  function renderWebsiteList() {
+    if (allowedWebsites.length === 0) {
+      websiteList.innerHTML = '<div class="empty-list">No websites configured. Button will appear on all websites.</div>';
+    } else {
+      websiteList.innerHTML = allowedWebsites.map(website => `
+        <div class="website-item">
+          <span>${website}</span>
+          <button class="remove-website" data-website="${website}">Remove</button>
+        </div>
+      `).join('');
+      
+      // Add event listeners to remove buttons
+      websiteList.querySelectorAll('.remove-website').forEach(btn => {
+        btn.addEventListener('click', () => {
+          removeWebsite(btn.dataset.website);
+        });
+      });
+    }
+  }
 });

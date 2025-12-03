@@ -5,7 +5,8 @@
   "description": "Decode Base64 strings from input or selected text on web pages",
   "permissions": [
     "activeTab",
-    "contextMenus"
+    "contextMenus",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",

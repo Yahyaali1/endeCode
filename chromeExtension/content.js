@@ -263,6 +263,63 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Floating decode button that appears when text is selected
 let floatingButton = null;
+let allowedWebsites = [];
+
+// Load allowed websites from storage
+function loadAllowedWebsites() {
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['allowedWebsites'], (result) => {
+      if (result.allowedWebsites && Array.isArray(result.allowedWebsites)) {
+        allowedWebsites = result.allowedWebsites;
+      } else {
+        allowedWebsites = [];
+      }
+    });
+  } else {
+    allowedWebsites = [];
+  }
+}
+
+// Load on script initialization
+loadAllowedWebsites();
+
+// Also reload when storage changes (in case user updates settings in another tab)
+if (chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.allowedWebsites) {
+      allowedWebsites = changes.allowedWebsites.newValue || [];
+    }
+  });
+}
+
+// Listen for updates to allowed websites
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'updateAllowedWebsites') {
+    allowedWebsites = request.websites || [];
+    sendResponse({ success: true });
+  }
+  return true;
+});
+
+// Check if current website is allowed
+function isWebsiteAllowed() {
+  // If no websites configured, allow all
+  if (allowedWebsites.length === 0) {
+    return true;
+  }
+  
+  const currentHost = window.location.hostname.toLowerCase();
+  
+  return allowedWebsites.some(pattern => {
+    // Handle wildcard patterns
+    if (pattern.startsWith('*.')) {
+      const domain = pattern.substring(2);
+      return currentHost === domain || currentHost.endsWith('.' + domain);
+    }
+    // Exact match
+    return currentHost === pattern;
+  });
+}
 
 function showFloatingButton(selection) {
   // Remove existing button
@@ -340,6 +397,11 @@ function hideFloatingButton() {
 
 // Listen for text selection
 document.addEventListener('mouseup', () => {
+  // Check if website is allowed
+  if (!isWebsiteAllowed()) {
+    return;
+  }
+  
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
   

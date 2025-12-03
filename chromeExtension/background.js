@@ -14,14 +14,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'decodeBase64') {
     const selectedText = info.selectionText.trim();
     
-    if (selectedText && tab.id) {
+    if (selectedText && tab && tab.id && tab.id >= 0) {
       // Send message to content script to decode and show popup
       chrome.tabs.sendMessage(tab.id, {
         action: 'decodeSelectedText',
         text: selectedText
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error('Error sending message to content script:', chrome.runtime.lastError);
+          // Silently ignore errors for tabs where content script isn't loaded
+          // (e.g., chrome:// pages, extension pages, etc.)
         }
       });
     }
@@ -32,22 +33,30 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'decodeText') {
     // Store text for popup to retrieve
-    chrome.storage.local.set({ pendingDecode: request.text }, () => {
-      sendResponse({ success: true });
-    });
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ pendingDecode: request.text }, () => {
+        sendResponse({ success: true });
+      });
+    } else {
+      sendResponse({ success: false, error: 'Storage not available' });
+    }
     return true;
   }
   
   if (request.action === 'getPendingDecode') {
     // Popup is requesting pending decode text
-    chrome.storage.local.get(['pendingDecode'], (result) => {
-      if (result.pendingDecode) {
-        chrome.storage.local.remove(['pendingDecode']);
-        sendResponse({ text: result.pendingDecode });
-      } else {
-        sendResponse({ text: null });
-      }
-    });
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['pendingDecode'], (result) => {
+        if (result.pendingDecode) {
+          chrome.storage.local.remove(['pendingDecode']);
+          sendResponse({ text: result.pendingDecode });
+        } else {
+          sendResponse({ text: null });
+        }
+      });
+    } else {
+      sendResponse({ text: null });
+    }
     return true;
   }
   
